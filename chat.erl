@@ -30,13 +30,15 @@ transmitter(Pids) ->
 			transmitter(Pids)
 	end.
 	
-mainLoop(Sock, TransPid) ->
+mainLoop(Sock) ->
 	{ok, Conn} = gen_tcp:accept(Sock),
 	WritePid = spawn(chat, writeConn, [Conn]),
+	TransPid = whereis(transmitter),
 	spawn(chat, readConn, [Conn, TransPid]),
 	TransPid ! WritePid,
-	mainLoop(Sock, TransPid).
+	mainLoop(Sock).
 start() ->
 	{ok, Sock} = gen_tcp:listen(8080, [binary, {active, false}]),
 	TransPid = spawn(chat, transmitter, [[]]),
-	mainLoop(Sock, TransPid).
+	register(transmitter, TransPid),
+	mainLoop(Sock).
